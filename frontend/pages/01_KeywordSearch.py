@@ -287,7 +287,7 @@ if __name__ == "__main__":
                 context_input = txt1
                 API_URL = "http://localhost:8000/invoke"
 
-                if st.button("🔍 Agent Review"):
+                if st.button("🔍 Agent Review", type="primary"):
                     if not question or not context_input:
                         st.warning("질문과 문맥을 모두 입력해주세요.")
                     else:
@@ -311,5 +311,5 @@ if __name__ == "__main__":
                                 st.error(f"❌ 오류 발생: {e}")
                 
         except Exception as e:
-            st.error(e)
+            st.error("선택된 데이터가 없습니다.")
             pass
