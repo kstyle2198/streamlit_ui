@@ -61,35 +61,6 @@ def make_hover_container(title:str, content:str, url:str):
             </a>
         """, unsafe_allow_html=True)
     
-# def make_hover_image_from_file(image_file, max_width: str = "100%"):
-#     if isinstance(image_file, str):
-#         with open(image_file, "rb") as f:
-#             img_bytes = f.read()
-#     else:
-#         img_bytes = image_file.read()
-
-#     img_base64 = base64.b64encode(img_bytes).decode()
-
-#     st.markdown(f"""
-#         <style>
-#         .hover-image {{
-#             transition: transform 0.3s ease;
-#             border-radius: 10px;
-#             cursor: default;
-#             display: block;
-#             margin: auto;
-#             max-width: {max_width};
-#             height: auto;
-#         }}
-#         .hover-image:hover {{
-#             transform: scale(1.05);
-#             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-#         }}
-#         </style>
-#         <img src="data:image/jpeg;base64,{img_base64}" class="hover-image" />
-#     """, unsafe_allow_html=True)
-
-
 image_paths = [
     "./system_image/img1.jpg",
     "./system_image/img2.jpg",
