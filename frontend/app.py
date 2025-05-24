@@ -1,55 +1,18 @@
 import base64
+import pathlib
 import streamlit as st
 import streamlit.components.v1 as components
 st.set_page_config(page_title="UI", page_icon="🐬", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS 스타일 추가 (hover 시 box-shadow와 transform 적용)
-st.markdown("""
-    <style>
-    a.clickable-box-wrapper {
-        display: block;
-        text-decoration: none !important;
-        color: inherit !important;
-    }
 
-    .hover-box {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-        text-decoration: none;
-        color: inherit;
-        display: block;
-        height: 270px;
-        overflow: hidden;
-    }
+# Function to load CSS from the 'assets' folder
+def load_css(file_path):
+    with open(file_path, encoding="utf8") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-    .hover-box:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-        cursor: pointer;
-    }
-
-    /* 텍스트 서식 Streamlit에 맞춤 */
-    .hover-box h3, .hover-box p {
-        all: unset;
-        display: block;
-    }
-
-    .hover-box h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .hover-box p {
-        font-size: 1rem;
-        color: inherit;
-    }
-
-    </style>
-""", unsafe_allow_html=True)
+# Load the external CSS
+css_path = pathlib.Path("D:/Streamlit_UI/frontend/assets/style.css")
+load_css(css_path)
 
 
 def make_hover_container(title:str, content:str, url:str):

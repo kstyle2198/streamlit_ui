@@ -3,56 +3,68 @@ import pandas as pd
 st.set_page_config(page_title="UI", page_icon="🐬", layout="wide", initial_sidebar_state="collapsed")
 
 import streamlit as st
-from st_aggrid import AgGrid, GridOptionsBuilder
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import pandas as pd
+st.session_state
 
-# 샘플 데이터
-data = {
-    "상태": ["<span style='color:green;font-weight:bold'>정상</span>", 
-            "<span style='color:orange'>주의</span>", 
-            "<span style='color:red;font-weight:bold'>위험</span>"],
-    "설명": ["시스템 정상 작동", "일부 지연 발생", "심각한 오류 발생"],
-    "수치": [25, 65, 92]
-}
-df = pd.DataFrame(data)
+# Sample data
+# 초기화: 세션 상태에 df 저장
+if "df" not in st.session_state:
+    st.session_state.df = pd.DataFrame({
+        "ID": [1, 2, 3],
+        "Name": ["Alice", "Bob", "Charlie"],
+        "Comment": ["Hello", "Nice to meet you", "Welcome"]
+    })
 
-# Grid 설정
+df = st.session_state.df  # 항상 세션 상태의 df 사용
+
+st.title("AgGrid 셀 클릭 -> 텍스트 편집 팝업 예제")
+
+# 세션 상태 초기화
+if "show_popup" not in st.session_state:
+    st.session_state["show_popup"] = False
+if "selected_cell_value" not in st.session_state:
+    st.session_state["selected_cell_value"] = ""
+if "selected_row_index" not in st.session_state:
+    st.session_state["selected_row_index"] = -1
+
+# AgGrid 옵션 구성
 gb = GridOptionsBuilder.from_dataframe(df)
-
-# 상태 컬럼에 커스텀 렌더러 적용
-gb.configure_column(
-    "상태",
-    cellRenderer="""
-    function(params) {
-        return `<div style="padding: 5px; border-radius: 5px;">${params.value}</div>`;
-    }
-    """
-)
-
-# 수치 컬럼에 조건부 서식 적용
-gb.configure_column(
-    "수치",
-    cellRenderer="""
-    function(params) {
-        let color = 'black';
-        if (params.value > 90) color = 'red';
-        else if (params.value > 60) color = 'orange';
-        return `<div style="color:${color}; font-weight:bold">${params.value}</div>`;
-    }
-    """
-)
-
+gb.configure_selection(selection_mode="single", use_checkbox=False)
 grid_options = gb.build()
 
-# AgGrid 표시
-AgGrid(
+grid_response = AgGrid(
     df,
     gridOptions=grid_options,
-    height=200,
-    allow_unsafe_jscode=True,
-    escapeHtml=False,
-    fit_columns_on_grid_load=True
+    update_mode=GridUpdateMode.SELECTION_CHANGED,
+    height=300,
+    theme="alpine",
 )
 
-# if __name__ == "__main__":
-#     st.title("Hybrid Search")
+selected = grid_response["selected_rows"]
+
+# 셀 클릭 처리
+try:
+    if selected.shape[0] > 0:
+        st.session_state["selected_cell_value"] = selected["Comment"].values[0]
+        st.session_state["selected_row_index"] = df[df["ID"] == selected["ID"].values[0]].index[0]
+        st.session_state["show_popup"] = True
+        st.rerun()
+
+except: pass
+
+@st.dialog("내용 수정")
+def cell_modify():            
+    updated_comment = st.text_area("Edit Comment", st.session_state["selected_cell_value"])
+    if st.button("💾 저장"):
+        df.at[st.session_state["selected_row_index"], "Comment"] = updated_comment
+        st.session_state["show_popup"] = False
+        st.rerun()
+
+# 팝업 텍스트 입력창 보여주기
+if st.session_state["show_popup"]:
+    cell_modify()
+
+
+if __name__ == "__main__":
+    st.title("Hybrid Search")

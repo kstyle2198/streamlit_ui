@@ -1,5 +1,7 @@
 import io
 import re
+import pathlib
+
 import requests
 from st_aggrid import AgGrid, GridOptionsBuilder, JsCode, GridUpdateMode
 import streamlit as st
@@ -8,6 +10,16 @@ from openpyxl import load_workbook
 st.set_page_config(page_title="UI", page_icon="🐬", layout="wide", initial_sidebar_state="collapsed")
 
 import streamlit.components.v1 as components
+
+# Function to load CSS from the 'assets' folder
+def load_css(file_path):
+    with open(file_path, encoding="utf8") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+# Load the external CSS
+css_path = pathlib.Path("D:/Streamlit_UI/frontend/assets/style.css")
+load_css(css_path)
 
 
 input_template = """You are a smart shipyard engineer.
@@ -29,7 +41,6 @@ Focus primarily on:
 
 <<Buyer's New Comment>>
 """
-
 example_input = "request for installing bwts - electric type"
 
 # 초기 데이터
@@ -144,173 +155,177 @@ def text_area_copy(text):
     """, height=60)
 
 
-
 def make_AgGrid(df):
-    # JS code to <취소선> 표기 변경
-    cell_renderer = JsCode("""
+    # ------------------------ JS Renderers ------------------------ #
+    strike_renderer = JsCode("""
         function(params) {
             let val = params.value;
-
-            // <s> 태그가 포함된 경우, 안쪽 텍스트 색상을 빨간색으로 설정
             if (val.includes("<s>")) {
-                val = val.replace("<s>", "<취소선>")
-                        .replace("</s>", "</취소선>");
+                val = val.replace("<s>", "<취소선>").replace("</s>", "</취소선>");
             }
             return val;
         }
-        """)
-    
-
-    # Grid 옵션 설정
-    gb = GridOptionsBuilder.from_dataframe(df)
-    # Enable pagination
-    gb.configure_pagination(
-    paginationAutoPageSize=False, 
-    paginationPageSize=3
-    )
-
-    # Create tooltip JS code
-    tooltip_renderer = JsCode("""
-    class CustomTooltip {
-        init(params) {
-            this.eGui = document.createElement('div');
-            this.eGui.innerHTML = '<div style="padding: 16px; background: #f5f5f5; border-radius: 8px;">' + 
-                                '<strong>' + params.value + '</strong>' + '</div>';
-        }
-        getGui() {
-            return this.eGui;
-        }
-    }
     """)
 
-    # Enable tooltips for all columns
-    for col in df.columns:
-        gb.configure_column(
-            col,
-            tooltipField=col,  # Field used for tooltip
-            valueFormatter=col    # Custom JS formatting for tooltip
-        )
+    tooltip_renderer = JsCode("""
+        class CustomTooltip {
+            init(params) {
+                this.eGui = document.createElement('div');
+                this.eGui.innerHTML = '<div style="padding: 16px; background: #f5f5f5; border-radius: 8px;">' + 
+                                      '<strong>' + params.value + '</strong>' + '</div>';
+            }
+            getGui() {
+                return this.eGui;
+            }
+        }
+    """)
 
-
-    # 첫 번째 컬럼에 체크박스 선택 기능 추가
-    gb.configure_grid_options(domLayout='autoHeight')
-    
-    # Enable default tooltip
-    gb.configure_grid_options(
-        enableBrowserTooltips=True,  # 브라우저 기본 툴팁 사용
-        tooltipShowDelay=0, 
-        tooltipHideDelay=2000)
-        
-    # 툴팁 관련 전역 옵션
-    gb.configure_grid_options(
-        tooltipShowDelay=0,
-        tooltipComponent='customTooltip',
-        components={"customTooltip": tooltip_renderer}
-    )
-
-    # if agent_mode: 
-    selection_mode, use_checkbox = "multiple", True
-    gb.configure_selection(selection_mode=selection_mode, use_checkbox=use_checkbox, pre_selected_rows=[0])
-    gb.configure_default_column(editable=True, wrapText=True, autoHeight=True)
-
-    # 통화 단위 서식 지정
     currency_formatter = JsCode("""
         function(params) {
-            if (params.value == null || params.value === undefined) {
-                return '';
-            }
-            var decimalPoints = params.column.colDef.cellRendererParams.decimalPoints || 0;
-            var currencySymbol = params.column.colDef.cellRendererParams.currencySymbol || '€';
-            var value = params.value;
-
-            // Format the number with thousand separators and decimal points
-            var formattedNumber = value.toLocaleString('en-US', {
-                minimumFractionDigits: decimalPoints,
-                maximumFractionDigits: decimalPoints
+            if (params.value == null || params.value === undefined) return '';
+            var dec = params.column.colDef.cellRendererParams.decimalPoints || 0;
+            var symbol = params.column.colDef.cellRendererParams.currencySymbol || '€';
+            var formatted = params.value.toLocaleString('en-US', {
+                minimumFractionDigits: dec,
+                maximumFractionDigits: dec
             });
-
-            return currencySymbol + formattedNumber;
+            return symbol + formatted;
         }
-        """)
+    """)
 
     currency_getter = JsCode("""
         function(params) {
             return params.data[params.colDef.field];
         }
-        """)
+    """)
 
-    # AgGrid 테이블
+    cell_style = JsCode("""
+        function(cellClassParams) {
+            const val = cellClassParams.value;
+            const field = cellClassParams.colDef.field;
+            if (field === 'extra' && val > 0) return {'background-color': '#fad7d7'};
+            if (field === 'credit' && val > 0) return {'background-color': '#b6d5fa'};
+            if (val && typeof val === 'string' && val.includes('<s>')) return {'background-color': '#e8fafa'};
+            return {};
+        }
+    """)
+
+    # ------------------------ Grid Options ------------------------ #
+    gb = GridOptionsBuilder.from_dataframe(df)
+
+    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=5)
+    gb.configure_grid_options(
+        domLayout='autoHeight',
+        enableBrowserTooltips=True,
+        tooltipShowDelay=0,
+        tooltipHideDelay=2000,
+        tooltipComponent='customTooltip',
+        components={"customTooltip": tooltip_renderer}
+    )
+
+    # Enable column selection
+    gb.configure_selection(selection_mode="multiple", use_checkbox=True, pre_selected_rows=[0])
+    gb.configure_default_column(editable=True, wrapText=True, autoHeight=True)
+
+    # Tooltips for all columns
+    for col in df.columns:
+        gb.configure_column(col, tooltipField=col, valueFormatter=col)
+
+    # ------------------------ Display UI ------------------------ #
     with st.expander("📃 :blue[**Results**]", expanded=True):
-        # 칼럼 숨기기
-        col100, col101 = st.columns([10, 1])
-        with col100: pass
-        with col101:
+        _, col_controls = st.columns([10, 1])
+        with col_controls:
             popover = st.popover("✔️ Hide Columns", use_container_width=True)
             show_extra = popover.checkbox("EXTRA", True)
             show_credit = popover.checkbox("CREDIT", True)
-            show_remark = popover.checkbox("REMARK", True)
-        
+            show_remark = popover.checkbox("REMARK", False)
+
+        # Column configurations
         gb.configure_column("hull_no", filter="agSetColumnFilter")
         gb.configure_column("ship_type", filter="agSetColumnFilter")
         gb.configure_column("size", filter="agSetColumnFilter")
-        gb.configure_column("extra", hide=not show_extra,
-                            valueGetter=currency_getter,
-                            valueFormatter=currency_formatter,
-                            cellRendererParams={
-                                'decimalPoints': 0,
-                                'currencySymbol': '$',
-                            }) 
-        gb.configure_column("credit", hide=not show_credit,
-                            valueGetter=currency_getter,
-                            valueFormatter=currency_formatter,
-                            cellRendererParams={
-                                'decimalPoints': 0,
-                                'currencySymbol': '$',
-                            }) 
-        gb.configure_column("remark", hide=not show_remark)
-        gb.configure_column("buyer_comment", width=500, filter="agTextColumnFilter", cellRenderer=cell_renderer) 
-        gb.configure_column("builder_reply", width=500, filter="agTextColumnFilter", cellRenderer=cell_renderer)
 
+        # Currency columns
+        currency_columns = [("extra", show_extra), ("credit", show_credit)]
+        for col_name, visible in currency_columns:
+            gb.configure_column(
+                col_name,
+                hide=not visible,
+                valueGetter=currency_getter,
+                valueFormatter=currency_formatter,
+                cellRendererParams={'decimalPoints': 0, 'currencySymbol': '$'}
+            )
+
+        # Simple hide column
+        gb.configure_column("remark", hide=not show_remark)
+
+        # Custom strike formatting
+        gb.configure_column("buyer_comment", width=500, filter="agTextColumnFilter", cellRenderer=strike_renderer)
+        gb.configure_column("builder_reply", width=500, filter="agTextColumnFilter", cellRenderer=strike_renderer)
+
+        # Final grid config
         grid_options = gb.build()
         grid_options["rowHeight"] = 60
+        grid_options["defaultColDef"]["cellStyle"] = cell_style
 
-        # 조건부 음영 효과 주기
-        cellStyle = JsCode(
-            r"""
-            function(cellClassParams) {
-                // 조건 1: extra > 0이면 금색 배경
-                if (cellClassParams.colDef.field === 'extra' && cellClassParams.value > 0) {                    
-                    return {'background-color': '#fad7d7'};
-                }
-                // 조건 1: credit > 0이면 금색 배경
-                if (cellClassParams.colDef.field === 'credit' && cellClassParams.value > 0) {                    
-                    return {'background-color': '#b6d5fa'};
-                }
-
-                // 조건 2: 셀 값에 <s> 태그가 포함되어 있으면 회색 배경
-                if (cellClassParams.value && typeof cellClassParams.value === 'string' && cellClassParams.value.includes('<s>')) {
-                    return {'background-color': '#e8fafa'};
-                }
-
-                return {};
-            }
-            """
+        grid_response = AgGrid(
+            df,
+            gridOptions=grid_options,
+            editable=True,
+            custom_css=custom_css,
+            allow_unsafe_jscode=True,
+            enable_enterprise_modules=True,
+            fit_columns_on_grid_load=True,
+            theme="blue",  # Options: streamlit, alpine, balham, material
         )
-        grid_options['defaultColDef']['cellStyle'] = cellStyle
-
-        grid_response = AgGrid(df, 
-                            gridOptions=grid_options, 
-                            editable=True, 
-                            custom_css=custom_css, 
-                            allow_unsafe_jscode=True,
-                            enable_enterprise_modules=True,
-                            fit_columns_on_grid_load=True,
-                            theme="blue",   # options: streamlit, alpine, balham, material
-                            )
 
     return grid_response
 
 
+API_URL = "http://localhost:8000/invoke"
+
+def call_agent_review_api(question: str, context: str) -> str:
+    """
+    Agent Review API를 호출하여 결과를 반환합니다.
+
+    Args:
+        question (str): 사용자 질문 (시스템 프롬프트 포함)
+        context (str): 문맥 정보 (여러 줄 가능)
+
+    Returns:
+        str: 생성된 응답 텍스트
+    """
+    payload = {
+        "messages": [question],
+        "context": context.strip().split("\n")
+    }
+
+    response = requests.post(API_URL, json=payload)
+    response.raise_for_status()
+    result = response.json()
+    return result.get('generation', '')
+
+
+from PIL import Image
+
+def is_taller_than_wide(image_path):
+    """
+    이미지의 세로 길이가 가로 길이보다 긴 경우 True를 반환하고,
+    그렇지 않으면 False를 반환합니다.
+
+    Args:
+        image_path (str): 이미지 파일 경로
+
+    Returns:
+        bool: 세로 > 가로 -> True / 세로 <= 가로 -> False
+    """
+    try:
+        with Image.open(image_path) as img:
+            width, height = img.size
+            return height > width
+    except Exception as e:
+        print(f"이미지 열기 실패: {e}")
+        return False
 
 if __name__ == "__main__":
     st.title("Keyword Search")
@@ -323,6 +338,13 @@ if __name__ == "__main__":
     
     with st.expander("🔎 :blue[**Search**]", expanded=True):
         st.success("검색구간")
+        options = ["인덱스1", "인덱스2", "인덱스3"]
+        pill_results = st.pills("st pills test", options=options, default=options, selection_mode="multi")
+        pill_results
+
+        seg_results = st.segmented_control("segment control", options=options, default=options, selection_mode="multi")
+        seg_results
+
 
 
     df = st.session_state.df.copy()
@@ -359,48 +381,43 @@ if __name__ == "__main__":
                 txt2_2 = st.text_area(label=":green[**Buyer's New Comment**]", placeholder="검토대상 선주 요구사항 입력", value=example_input, key="dfdfsdf", height=300)
                 text_area_copy(txt2_2) 
                 
-            with col44: 
-                question = txt2_1 + "\n" + txt2_2   # 시스템 프롬프트 + 질문 쿼리
+            with col44:
+                question = f"{txt2_1}\n{txt2_2}"  # 시스템 프롬프트 + 질문 쿼리
                 context_input = txt1
-                API_URL = "http://localhost:8000/invoke"
 
-                if st.button("🔍 Agent Review", type="primary"):
-                    if not question or not context_input:
+                if st.button("🔍 Agent Review", key="pulse"):
+                    if not question.strip() or not context_input.strip():
                         st.warning("질문과 문맥을 모두 입력해주세요.")
                     else:
                         with st.spinner("Reviewing..."):
                             try:
-                                # 입력 데이터 구성
-                                payload = {
-                                    "messages": [question],
-                                    "context": context_input.strip().split("\n")
-                                }
-
-                                # FastAPI POST 요청
-                                response = requests.post(API_URL, json=payload)
-                                response.raise_for_status()
-
-                                # 결과 출력
-                                result = response.json()
-                                txt3 = st.text_area(label=":green[**Agent Review**]", value=result['generation'], key="wsdfsdffer", height=530)
-                                text_area_copy(txt3)       
+                                txt3 = call_agent_review_api(question, context_input)
+                                st.text_area(
+                                    label=":green[**Agent Review**]",
+                                    value=txt3,
+                                    key="wsdfsdffer",
+                                    height=530
+                                )
+                                text_area_copy(txt3)
                             except requests.exceptions.RequestException as e:
                                 st.error(f"❌ 오류 발생: {e}")
+
             import base64
-            col91, col92 = st.columns([4, 6])
+            col91, col92 = st.columns([5, 5])
             for path in new_df["remark"].tolist():
+                print(path)
                 if path.endswith("pdf"):
                     with open(path, "rb") as f:
                         base64_pdf = base64.b64encode(f.read()).decode('utf-8')  # 올바른 b64 인코딩
                     pdf_display = f"""
-                        <iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="900" type="application/pdf"></iframe>
+                        <iframe src="data:application/pdf;base64,{base64_pdf}" width="1000" height="900" type="application/pdf"></iframe>
                     """
                     with col91: st.markdown(pdf_display, unsafe_allow_html=True)
-                elif path.endswith("jpg"):
-                    with col92: st.image(path, caption="선택한 이미지", use_container_width=True)
                 else:
-                    pass
-
+                    with col92: 
+                        if is_taller_than_wide(image_path=path):
+                            st.image(path, caption=f"{path}", width=700)  # 세로형 이미지
+                        else: st.image(path, caption=f"{path}",use_container_width=True)  # 가로형 이미지
                 
         except Exception as e:
             st.error("선택된 데이터가 없습니다.")
