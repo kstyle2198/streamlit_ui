@@ -1129,6 +1129,16 @@ wheels = [
 ]
 
 [[package]]
+name = "sseclient"
+version = "0.0.27"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cf/6c/fa601216344952be8f9a51a3f49b4274bbbc58bd395f87f67f6131726358/sseclient-0.0.27.tar.gz", hash = "sha256:b2fe534dcb33b1d3faad13d60c5a7c718e28f85987f2a034ecf5ec279918c11c", size = 7465 }
+
+[[package]]
 name = "starlette"
 version = "0.46.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1276,6 +1286,7 @@ dependencies = [
     { name = "smmap" },
     { name = "sniffio" },
     { name = "sqlalchemy" },
+    { name = "sseclient" },
     { name = "starlette" },
     { name = "streamlit" },
     { name = "streamlit-aggrid" },
@@ -1361,6 +1372,7 @@ requires-dist = [
     { name = "smmap", specifier = "==5.0.2" },
     { name = "sniffio", specifier = "==1.3.1" },
     { name = "sqlalchemy", specifier = "==2.0.41" },
+    { name = "sseclient", specifier = ">=0.0.27" },
     { name = "starlette", specifier = "==0.46.2" },
     { name = "streamlit", specifier = "==1.45.0" },
     { name = "streamlit-aggrid", specifier = "==1.1.4.post1" },
