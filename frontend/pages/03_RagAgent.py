@@ -32,6 +32,34 @@ st.markdown("""
     [data-testid="stVerticalBlock"] > [style*="flex-direction: column"] {
         padding-bottom: 120px;
     }
+    
+    /* 참조 문서 스타일 */
+    .ref-docs {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: #f0f2f6;
+        border-radius: 0.5rem;
+    }
+    
+    /* 이미지 그리드 스타일 */
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    
+    .image-grid img {
+        width: 100%;
+        border-radius: 0.5rem;
+        object-fit: cover;
+    }
+    
+    .image-caption {
+        font-size: 0.8rem;
+        text-align: center;
+        margin-top: 0.2rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -59,25 +87,30 @@ def render_message_content(message):
                 with st.expander("🤔 Thinking Process", expanded=False):
                     st.markdown(think_content)
                 st.markdown(response_content)
-                
-                # docs와 paths 정보 표시
-                if "docs" in message and message["docs"]:
-                    st.info(f"참조 문서: {message['docs']}")
-                if "paths" in message and message["paths"]:
-                    st.info(f"파일 경로: {message['paths']}")
-                    for img in validate_image_paths(message['paths']):
-                        st.image(img, caption=Path(img).name)
-                return
+            else:
+                st.markdown(content)
+        else:
+            # 일반 assistant 메시지 처리
+            st.markdown(content)
         
-        # 일반 assistant 메시지 처리
-        st.markdown(content)
-        # docs와 paths 정보 표시
+        # 모든 assistant 메시지에 대해 docs와 paths 정보 표시
         if "docs" in message and message["docs"]:
-            st.info(f"참조 문서: {message['docs']}")
+            with st.expander("📂 참조 문서", expanded=False):
+                for doc in message['docs']:
+                    st.markdown(f"<div class='ref-docs'>{doc}</div>", unsafe_allow_html=True)
+        
         if "paths" in message and message["paths"]:
-            st.info(f"파일 경로: {message['paths']}")
-            for img in validate_image_paths(message['paths']):
-                st.image(img, caption=Path(img).name)
+            with st.expander("🖼️ 참조 이미지", expanded=False):
+                valid_images = validate_image_paths(message['paths'])
+                if valid_images:
+                    # 3열 그리드 생성
+                    st.markdown('<div class="image-grid">', unsafe_allow_html=True)
+                    
+                    for i, img in enumerate(valid_images):
+                        st.image(img, caption=Path(img).name)
+                        # 3개 이미지마다 새로운 행 시작 (Streamlit이 자동으로 처리)
+                    
+                    st.markdown('</div>', unsafe_allow_html=True)
     else:
         # User 메시지 처리
         st.markdown(content)
@@ -150,7 +183,8 @@ def main():
                 think_expander = st.expander("🤔 Thinking Process", expanded=True)
                 think_container = think_expander.empty()
                 response_container = st.empty()
-                image_container = st.container()  # 이미지 전용 컨테이너 추가
+                docs_container = st.container()
+                image_container = st.container()
                 
                 full_response = ""
                 think_content = ""
@@ -206,27 +240,35 @@ def main():
                     formatted_content = f"🤔 Thinking Process:\n{think_content}\n\n---\n\n{full_response}"
                 else:
                     formatted_content = full_response
-                    
+                import random
                 # 이미지 경로 (예시)
-                example_images = [
-                    "D:/Streamlit_UI/frontend/static/images/test_image.jpg",
-                    "D:/Streamlit_UI/frontend/static/images/test_image.jpg"
-                ]
+                example_images = ["D:/Streamlit_UI/frontend/static/images/test_image.jpg" for _ in range(random.randint(1, 5))]
+                    
                 
                 # 이미지 경로 유효성 검사
                 valid_images = validate_image_paths(example_images)
-                
                 assistant_message = {
                     "role": "assistant", 
                     "content": formatted_content, 
-                    "docs": ["doc1", "doc2"],
+                    "docs": [f"doc_{random.randint(1, 10)}", f"doc_{random.randint(1, 10)}"],
                     "paths": valid_images
                 }
                 
-                # 이미지 컨테이너에 이미지 표시
+                # 문서와 이미지 표시
+                with docs_container:
+                    if assistant_message["docs"]:
+                        with st.expander("📂 참조 문서", expanded=False):
+                            for doc in assistant_message['docs']:
+                                st.markdown(f"<div class='ref-docs'>{doc}</div>", unsafe_allow_html=True)
+                
                 with image_container:
-                    for img in valid_images:
-                        st.image(img, caption=Path(img).name)
+                    if valid_images:
+                        with st.expander("🖼️ 참조 이미지", expanded=False):
+                            # 3열 그리드 생성
+                            cols = st.columns(3)
+                            for i, img in enumerate(valid_images):
+                                with cols[i % 3]:
+                                    st.image(img, caption=Path(img).name, use_container_width=True)
                 
                 st.session_state.messages.append(assistant_message)
 
