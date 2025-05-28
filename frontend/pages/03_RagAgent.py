@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+from pathlib import Path
 
 # Page config
 st.set_page_config(
@@ -34,6 +35,52 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def validate_image_paths(paths):
+    valid_paths = []
+    for img in paths:
+        if Path(img).exists():
+            valid_paths.append(img)
+        else:
+            st.error(f"이미지 경로가 유효하지 않습니다: {img}")
+    return valid_paths
+
+def render_message_content(message):
+    content = message["content"]
+    
+    # Assistant 메시지 처리
+    if message["role"] == "assistant":
+        # Thinking Process가 있는 경우 처리
+        if "🤔 Thinking Process:" in content:
+            parts = content.split("\n\n---\n\n")
+            if len(parts) == 2:
+                think_content = parts[0].replace("🤔 Thinking Process:\n", "")
+                response_content = parts[1]
+                
+                with st.expander("🤔 Thinking Process", expanded=False):
+                    st.markdown(think_content)
+                st.markdown(response_content)
+                
+                # docs와 paths 정보 표시
+                if "docs" in message and message["docs"]:
+                    st.info(f"참조 문서: {message['docs']}")
+                if "paths" in message and message["paths"]:
+                    st.info(f"파일 경로: {message['paths']}")
+                    for img in validate_image_paths(message['paths']):
+                        st.image(img, caption=Path(img).name)
+                return
+        
+        # 일반 assistant 메시지 처리
+        st.markdown(content)
+        # docs와 paths 정보 표시
+        if "docs" in message and message["docs"]:
+            st.info(f"참조 문서: {message['docs']}")
+        if "paths" in message and message["paths"]:
+            st.info(f"파일 경로: {message['paths']}")
+            for img in validate_image_paths(message['paths']):
+                st.image(img, caption=Path(img).name)
+    else:
+        # User 메시지 처리
+        st.markdown(content)
 
 def main():
     # 오른쪽 패널 생성
@@ -41,7 +88,7 @@ def main():
 
     # 메인 콘텐츠 영역
     with col1:
-        # Initialize chat history with docs and paths if not exists
+        # Initialize chat history
         if "messages" not in st.session_state:
             st.session_state.messages = []
         
@@ -52,45 +99,6 @@ def main():
                     msg["docs"] = []
                 if "paths" not in msg:
                     msg["paths"] = []
-
-        # Custom function to render message content
-        def render_message_content(message):
-            content = message["content"]
-            
-            # Assistant 메시지 처리
-            if message["role"] == "assistant":
-                # Thinking Process가 있는 경우 처리
-                if "🤔 Thinking Process:" in content:
-                    parts = content.split("\n\n---\n\n")
-                    if len(parts) == 2:
-                        think_content = parts[0].replace("🤔 Thinking Process:\n", "")
-                        response_content = parts[1]
-                        
-                        with st.expander("🤔 Thinking Process", expanded=False):
-                            st.markdown(think_content)
-                        st.markdown(response_content)
-                        
-                        # docs와 paths 정보 표시 (항상 표시)
-                        if "docs" in message and message["docs"]:
-                            st.info(f"참조 문서: {message['docs']}")
-                        if "paths" in message and message["paths"]:
-                            st.info(f"파일 경로: {message['paths']}")
-                        return
-            
-                # 일반 assistant 메시지 처리
-                st.markdown(content)
-                # docs와 paths 정보 표시 (항상 표시)
-                if "docs" in message and message["docs"]:
-                    st.info(f"참조 문서: {message['docs']}")
-                if "paths" in message and message["paths"]:
-                    st.info(f"파일 경로: {message['paths']}")
-                    for img in message['paths']:
-                        st.markdown(img)
-                        st.image(image=img)
-                    st.rerun()
-            else:
-                # User 메시지 처리
-                st.markdown(content)
 
         # Display chat messages from history
         for message in st.session_state.messages:
@@ -142,6 +150,7 @@ def main():
                 think_expander = st.expander("🤔 Thinking Process", expanded=True)
                 think_container = think_expander.empty()
                 response_container = st.empty()
+                image_container = st.container()  # 이미지 전용 컨테이너 추가
                 
                 full_response = ""
                 think_content = ""
@@ -198,22 +207,28 @@ def main():
                 else:
                     formatted_content = full_response
                     
-                # 실제 애플리케이션에서는 여기서 docs와 paths를 서버 응답에서 추출해야 함
-                # 예제를 위해 하드코딩된 값 사용
+                # 이미지 경로 (예시)
+                example_images = [
+                    "D:/Streamlit_UI/frontend/static/images/test_image.jpg",
+                    "D:/Streamlit_UI/frontend/static/images/test_image.jpg"
+                ]
+                
+                # 이미지 경로 유효성 검사
+                valid_images = validate_image_paths(example_images)
+                
                 assistant_message = {
                     "role": "assistant", 
                     "content": formatted_content, 
-                    "docs": ["doc1", "doc2"],  # 서버 응답에서 이 데이터를 가져와야 함
-                    "paths": ["D:/Streamlit_UI/frontend/static/images/test_image.jpg", "D:/Streamlit_UI/frontend/static/images/test_image.jpg"]  # 서버 응답에서 이 데이터를 가져와야 함
+                    "docs": ["doc1", "doc2"],
+                    "paths": valid_images
                 }
                 
-                st.session_state.messages.append(assistant_message)
+                # 이미지 컨테이너에 이미지 표시
+                with image_container:
+                    for img in valid_images:
+                        st.image(img, caption=Path(img).name)
                 
-                # 새 메시지의 docs와 paths도 표시
-                if "docs" in assistant_message and assistant_message["docs"]:
-                    st.info(f"참조 문서: {assistant_message['docs']}")
-                if "paths" in assistant_message and assistant_message["paths"]:
-                    st.info(f"파일 경로: {assistant_message['paths']}")
+                st.session_state.messages.append(assistant_message)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
