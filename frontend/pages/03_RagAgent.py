@@ -4,9 +4,9 @@ import json
 from pathlib import Path
 
 # Page config
-st.set_page_config(
-    page_title="UI", page_icon="🐬", layout="wide", initial_sidebar_state="collapsed"
-)
+# st.set_page_config(
+#     page_title="UI", page_icon="🐬", layout="wide", initial_sidebar_state="collapsed"
+# )
 
 # CSS를 이용한 하단 고정 채팅 입력창
 st.markdown("""
