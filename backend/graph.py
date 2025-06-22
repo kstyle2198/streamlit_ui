@@ -145,10 +145,7 @@ async def generate_content(request: ARequest):
     async def stream_generator():
         thinking_started = False
 
-        async for msg, metadata in graph_async.astream(
-            {"topic": topic},
-            stream_mode="messages",
-        ):
+        async for msg, metadata in graph_async.astream({"topic": topic}, stream_mode="messages",):
             node = metadata["langgraph_node"]
             if node == "generate_joke":
                 if msg.content:
@@ -176,6 +173,9 @@ async def generate_content(request: ARequest):
             else: pass
 
     return StreamingResponse(stream_generator(), media_type="text/event-stream")
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
