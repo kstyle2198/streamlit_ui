@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Dict, Optional, Union, TypedDict, Annotated
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from langgraph.graph import StateGraph, MessagesState, START, END
@@ -7,25 +7,29 @@ from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from FlagEmbedding import FlagReranker
-
+import operator
+import heapq
+import json
+import asyncio
+import uuid
+from fastapi.responses import StreamingResponse
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
-llm = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0,max_tokens=3000,)  # qwen-qwq-32b, llama-3.3-70b-versatile
-llm_think = ChatGroq(model_name="qwen-qwq-32b", temperature=0,max_tokens=3000,)  # qwen-qwq-32b, llama-3.3-70b-versatile
+llm = ChatGroq(model_name="gemma2-9b-it", temperature=0,max_tokens=3000,) 
+llm_think = ChatGroq(model_name="qwen/qwen3-32b", temperature=0,max_tokens=3000,) 
 
-from FlagEmbedding import FlagReranker
-reranking_model_path = "D:/LLMs/bge-reranker-v2-m3"
+reranking_model_path = "D:/LLMs/bge-reranker-v2-m3" # 실제 경로로 변경해야 합니다.
 reranker = FlagReranker(model_name_or_path=reranking_model_path, 
                         use_fp16=True,
                         batch_size=512,
                         max_length=2048,
                         normalize=True)
 
-from typing import Union, List
 from langchain_ollama import OllamaEmbeddings
 from langchain_elasticsearch import ElasticsearchStore, DenseVectorStrategy
+from langchain_core.documents import Document
 
 def load_elastic_vectorstore(index_names: Union[str, List[str]]):
     # 단일 문자열인 경우 리스트로 변환
@@ -44,19 +48,15 @@ def load_elastic_vectorstore(index_names: Union[str, List[str]]):
     )
     return vector_store
 
-
 index_names = ["ship_safety"]
 vector_store = load_elastic_vectorstore(index_names=index_names)
 
-import heapq
-from langchain_core.documents import Document
-
 def reranking(query: str, docs: list, min_score: float = 0.5, top_k: int = 3):
     """
-    doc string
+    Reranks documents based on a query.
     """
     global reranker
-    inputs = [[query.lower(), doc['page_content'].lower()] for doc in docs]
+    inputs = [[query.lower(), doc["page_content"].lower()] for doc in docs]
     scores = reranker.compute_score(inputs)
     if not isinstance(scores, list):
         scores = [scores]
@@ -77,51 +77,38 @@ def reranking(query: str, docs: list, min_score: float = 0.5, top_k: int = 3):
 # -----------------------------
 # Step 1: Define state and agent
 # -----------------------------
-import operator
-from typing import Annotated
-from typing import Dict, TypedDict
 from langgraph.graph.message import add_messages
 from langchain_core.messages import AnyMessage
+
 class OverAllState(TypedDict):
     """
     Represents the overall state of our graph.
     """
     question: str
-    questions: Annotated[list, operator.add]
-    context: Annotated[list, operator.add]
-    rerank_context: Annotated[list, operator.add]
-    top_scores: Annotated[list, operator.add]
+    questions: Annotated[list, operator.add] # 질문 누적
+    context: Annotated[list, operator.add] # 검색 결과 누적
+    rerank_context: Annotated[list, operator.add] # 리랭크된 검색 결과 누적
+    top_scores: Annotated[list, operator.add] # 리랭크 점수 누적
     top_k: Dict = {'doc':4, "web": 2}
     rerank_k: int = 3
     rerank_threshold: float = 0.01
-    generations: Annotated[list, operator.add]
+    generations: Annotated[list, operator.add] # 응답 결과 누적
 
 from langchain_core.messages import HumanMessage
 def refined_question(state:OverAllState):
-
-
-    print(len(state['questions']))
-    print(state['questions'])
-
-    if len(state['questions']) > 0:
-        print(1)
-        original_question = ""
-        for q, a in zip(state['questions'][-4:], state['generations'][-4:]):
-            a_without_think = re.sub(r"<think>.*?</think>", "", a, flags=re.DOTALL).strip()
-            original_question += f"question: {q}, answer: {a_without_think}"
-        original_question += f"final question is {state['question']}"  
-    else:
-           print(2)
-           original_question = state['question']
+    original_question = state['question']
 
     prompt = f"""Convert below original question into refined question in Korean for more efficient search and generation.
     You must generate the refined question without any answer or redundant expression.
     <original question>
     {original_question}
     """
-    refined_question = llm.invoke([HumanMessage(content=prompt)])
-    print(f">>>The Original Question is {original_question} and The Refined Qeustion is {refined_question.content}.")
-    return {"question": refined_question.content}
+    refined_question_content = llm.invoke([HumanMessage(content=prompt)]).content
+    print(f">>>The Original Question is {original_question}")
+    print(f">>>The Refined Question is {refined_question_content}.")
+    
+    # 질문을 questions 리스트에 추가
+    return {"question": refined_question_content, "questions": [original_question]}
 
 def retrieve_agent(state: OverAllState):
     """
@@ -145,15 +132,15 @@ def retrieve_agent(state: OverAllState):
     documents = retriever.invoke(question)
     documents = [{"page_content": doc.page_content, "metadata": doc.metadata} for doc in documents]
 
-    print(f"---- Retrieve 문서개수: {len(documents)} -{type(documents[0])}")
+    print(f"---- Retrieve 문서개수: {len(documents)}")
 
+    # 검색 결과를 context에 추가
     return {"context": [documents]}
 
 from langchain_tavily import TavilySearch
 from langchain_core.documents import Document
 
 def websearch_agent(state: OverAllState):
-    
     """ Retrieve docs from web search """
     question = state['question']
     top_k_web = state['top_k']['web']
@@ -169,8 +156,9 @@ def websearch_agent(state: OverAllState):
     for content, url in zip(contents, metas):
         documents.append({"page_content":content, "metadata":{'url':url}})
 
-    print(f"---- Web Search 문서개수: {len(documents)} - {type(documents[0])}")
+    print(f"---- Web Search 문서개수: {len(documents)}")
 
+    # 웹 검색 결과를 context에 추가
     return {"context": [documents]} 
 
 def reranking_agent(state:OverAllState):
@@ -184,15 +172,15 @@ def reranking_agent(state:OverAllState):
     num_of_agents = len(list(state["top_k"].keys()))
 
     ## 1차원으로 검색 문서 merged : [[문석검색], [웹검색]] --> [문서검색, 웹검색]
-    merged_context = [item for sublist in context[num_of_agents*-1:] for item in sublist]   # 에이전트 개수만큼만 리랭킹 대상 문서로 지정 --> 여기서는 에이전트가 두개이고, 끝에서 2개까지 문서 대상 리랭킹
-    print(f"---- merged_context: {len(merged_context)} - {type(merged_context[0])}")
+    # 에이전트 개수만큼만 리랭킹 대상 문서로 지정 (여기서는 에이전트가 두개이고, 끝에서 2개까지 문서 대상 리랭킹)
+    merged_context = [item for sublist in context[num_of_agents*-1:] for item in sublist] 
+    print(f"---- merged_context: {len(merged_context)}")
     
     top_scores, documents = reranking(query=question, docs=merged_context, min_score = rerank_threshold, top_k= rerank_k)
-    print(f"---- Retrieve Reranking 문서개수: {len(documents)} / top_scores: {top_scores}")
-    return {'rerank_context': [documents], 'top_scores': [top_scores], "questions": [state['question']]}
-
-
-
+    print(f"---- Reranking 문서개수: {len(documents)} / top_scores: {top_scores}")
+    
+    # 리랭크된 문서와 스코어를 각각의 리스트에 추가
+    return {"rerank_context": [documents], "top_scores": [top_scores]}
 
 
 # -----------------------------
@@ -222,35 +210,28 @@ def search_builder(state):
 
 search_graph = search_builder(OverAllState)
 
-
-
-
 # -----------------------------
 # Step 3: FastAPI Input/Output Models
 # -----------------------------
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Dict, Optional
-import re
-import uuid
 
 app = FastAPI()
 
 # Define request models
 class QuestionRequest(BaseModel):
     question: str
-    questions: list
     top_k: Dict = {'doc':3, 'web':2}
     rerank_k: Optional[int] = 3
     rerank_threshold: Optional[float] = 0.01
     session_id: str = None  # 클라이언트가 줄 수도 있고 안 줄 수도 있음
-    generations: list
 
 class SearchResponse(BaseModel):
     refined_question: str
     documents: List[Dict]
     scores: List[float]
-
+    questions_history: List[str] # 누적된 질문 히스토리 추가
+    search_results_history: List[List[Dict]] # 누적된 검색 결과 히스토리 추가 (각 검색 단계별 결과 리스트)
+    reranked_results_history: List[List[Dict]] # 누적된 리랭크 결과 히스토리 추가 (각 리랭크 단계별 결과 리스트)
+    rerank_scores_history: List[List[float]] # 누적된 리랭크 스코어 히스토리 추가 (각 리랭크 단계별 스코어 리스트)
 
 @app.post("/search", response_model=SearchResponse)
 async def search_documents(request: QuestionRequest):
@@ -262,34 +243,43 @@ async def search_documents(request: QuestionRequest):
         # ✅ session_id 자동 생성 또는 재사용
         session_id = request.session_id or str(uuid.uuid4())
         thread_id = f"thread-{session_id}"
-        # Initialize state with default values
+        
+        # Initialize state with default values and empty lists for accumulation
         state = {
-            'question': request.question,
-            'top_k': request.top_k,
-            'rerank_k': request.rerank_k,
-            'rerank_threshold': request.rerank_threshold,
-            'questions': [],
-            'context': [],
-            'rerank_context': [],
-            'top_scores': [],
+            "question": request.question,
+            "top_k": request.top_k,
+            "rerank_k": request.rerank_k,
+            "rerank_threshold": request.rerank_threshold,
+            "questions": [], # 여기에 첫 질문이 refined_question에서 추가됨
+            "context": [],
+            "rerank_context": [],
+            "top_scores": [],
+            "generations": [], # /search에서는 사용하지 않지만, state 정의에 포함
         }
         
         # Execute the search graph
+        # ainvoke는 최종 상태를 반환합니다.
         search_result = await search_graph.ainvoke(state, config={"thread_id": thread_id})
         
         # Prepare response
         documents = []
-        for doc in search_result['rerank_context'][0]:
-            documents.append({
-                "page_content": doc["page_content"],
-                "metadata": doc["metadata"]
-            })
-        scores = [score[0] for score in search_result['top_scores'][0]]
+        # rerank_context는 리스트의 리스트이므로, 가장 마지막 리랭크 결과를 가져옵니다.
+        if search_result["rerank_context"]:
+            documents = search_result["rerank_context"][-1] 
+
+        scores = []
+        # top_scores도 리스트의 리스트이므로, 가장 마지막 리랭크 스코어를 가져옵니다.
+        if search_result["top_scores"]:
+            scores = [score[0] for score in search_result["top_scores"][-1]]
         
         return SearchResponse(
             refined_question = search_result["question"],
-            # documents=documents,
-            # scores=scores
+            documents=documents,
+            scores=scores,
+            questions_history=search_result["questions"], # 누적된 질문 히스토리
+            search_results_history=search_result["context"], # 누적된 검색 결과 히스토리
+            reranked_results_history=search_result["rerank_context"], # 누적된 리랭크 결과 히스토리
+            rerank_scores_history=[[s[0] for s in score_list] for score_list in search_result["top_scores"]] # 누적된 리랭크 스코어 히스토리
         )
     
     except Exception as e:
@@ -297,6 +287,7 @@ async def search_documents(request: QuestionRequest):
             status_code=500, 
             detail=f"Search failed: {str(e)}"
         )
+
 
 from typing import TypedDict, Annotated, List, Dict, Optional
 from pydantic import BaseModel
@@ -317,16 +308,6 @@ Nonetheless, If you don't know the answer, just say that you don't know.
 Question: {question} 
 Context: {context} 
 Answer:"""
-
-
-# class GenState(TypedDict):
-#     """
-#     Represents the overall state of our graph.
-#     """
-#     question: str
-#     questions: Annotated[List[str], operator.add]
-#     documents: Annotated[List[Dict], operator.add]
-#     generations: Annotated[List[str], operator.add]
 
 class GenerationRequest(BaseModel):
     question: str
@@ -386,35 +367,37 @@ async def generate_stream(state: Dict, thread_id: str):
     """Generate streaming response"""
     thinking_started = False
     
-    async for msg, metadata in gen_graph.astream(
-        state, 
-        stream_mode="messages", 
-        config={"thread_id": thread_id}
-    ):
+    async for msg, metadata in gen_graph.astream(state, stream_mode="messages", config={"thread_id": thread_id}):
         if metadata["langgraph_node"] != "generate_agent":
             continue
-            
-        if msg.content:
-            if thinking_started:
-                yield sse_format({"type": "thinking_end"})
-                thinking_started = False
-                
+
+        if msg.content == "<think>":
+            yield sse_format({
+                "content": msg.content,
+                "type": "thinking_start",
+                "thinking": True
+                })
+            thinking_started = True
+        elif msg.content == "</think>":
+            yield sse_format({
+                "content": msg.content,
+                "type": "thinking_end",
+                "thinking": False
+                })
+            thinking_started = False
+        elif msg.content and thinking_started:
+            yield sse_format({
+                "content": msg.content,
+                "type": "thinking",
+                "thinking": True
+                })
+        elif msg.content and not thinking_started:
             yield sse_format({
                 "content": msg.content,
                 "type": "answer",
                 "thinking": False
-            })
-            
-        if "reasoning_content" in msg.additional_kwargs:
-            if not thinking_started:
-                yield sse_format({"type": "thinking_start"})
-                thinking_started = True
-                
-            yield sse_format({
-                "content": msg.additional_kwargs["reasoning_content"],
-                "type": "thinking",
-                "thinking": True
-            })
+                })
+        else: pass
 
 @app.post("/generate", response_model=GenerationResponse)
 async def generate_content(request: GenerationRequest):
@@ -425,12 +408,12 @@ async def generate_content(request: GenerationRequest):
         "question": request.question,
         "questions": request.questions,
         "documents": request.documents,
-    }
+        }
     
-    return StreamingResponse(
-        generate_stream(state, thread_id),
-        media_type="text/event-stream"
-    )
+    return StreamingResponse(generate_stream(state, thread_id), media_type="text/event-stream")
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
