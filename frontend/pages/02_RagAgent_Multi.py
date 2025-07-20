@@ -51,14 +51,14 @@ for i, message in enumerate(st.session_state.conversation_history):
     with st.chat_message(message["role"]):
         # Thinking process display
         if message["role"] == "assistant" and st.session_state.thinking_process.get(i):
-            with st.expander("AI Thought Process"):
+            with st.expander("💭 Thinking..."):
                 st.markdown(st.session_state.thinking_process[i])
         
         st.markdown(message["content"])
         
         # Sources display
         if message["role"] == "assistant" and st.session_state.search_results.get(i):
-            with st.expander("참고문서"):
+            with st.expander("📖 참고문서"):
                 sources_to_display = []
                 for doc in st.session_state.search_results[i]:
                     source_content = doc.get("page_content", "내용 없음")
@@ -100,8 +100,6 @@ if prompt := st.chat_input("Ask me anything"):
     # Step 1: Perform search
     search_payload = {
         "question": multi_prompt,
-        # "questions": [msg["content"] for msg in st.session_state.conversation_history if msg["role"] == "user"],
-        # "generations": [], # 이 부분은 백엔드에서 필요한 경우 채우도록 합니다.
         "top_k": {"doc": doc_top_k, "web": web_top_k},
         "rerank_k": rerank_k,
         "rerank_threshold": rerank_threshold,
@@ -121,8 +119,8 @@ if prompt := st.chat_input("Ask me anything"):
         st.session_state.search_results[assistant_message_index] = current_search_results
         
         # Show refined question if different from original
-        if search_data["refined_question"] != prompt:
-            answer_placeholder.markdown(f"🔍 Refined question: *{search_data['refined_question']}*")
+        # if search_data["refined_question"] != prompt:
+        #     answer_placeholder.markdown(f"🔍 Refined question: *{search_data['refined_question']}*")
         
         # Step 2: Generate answer with streaming
         print("---- Start Generation ----")
@@ -132,7 +130,7 @@ if prompt := st.chat_input("Ask me anything"):
         
         # Prepare generation request
         gen_payload = {
-            "question": search_data["refined_question"],
+            "question": multi_prompt, #search_data["refined_question"],
             "questions": [msg["content"] for msg in st.session_state.conversation_history if msg["role"] == "user"],
             "documents": current_search_results,
             "session_id": st.session_state.session_id
