@@ -7,10 +7,6 @@ import json
 BACKEND_URL = "http://localhost:8000"  # Update with your FastAPI server URL
 
 
-def format_docs(docs: list) -> str:
-    """Format documents for context"""
-    return "\n\n".join(doc["content"].strip().replace("\n", "") for doc in docs)
-
 # Initialize session state
 def initialize_session_state():
     if "session_id" not in st.session_state:
@@ -71,12 +67,19 @@ for i, message in enumerate(st.session_state.conversation_history):
 
 # User input
 if prompt := st.chat_input("Ask me anything"):
+
+    # 멀티턴 질문 정제
+    query_payload = {"question": prompt, "chat_history": st.session_state.conversation_history}
+    refined_result = requests.post(f"{BACKEND_URL}/refine", json=query_payload)
+    refined_result = refined_result.json()
+
+
     # Append user message immediately
     st.session_state.conversation_history.append({
         "role": "user",
-        "content": prompt
+        "content": refined_result["refined_query"]
     })
-    
+    print(4)
     # Display user message
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -91,15 +94,11 @@ if prompt := st.chat_input("Ask me anything"):
         thinking_placeholder = st.empty()
         answer_placeholder = st.empty()
         sources_placeholder = st.empty() # 소스를 위한 플레이스홀더 추가
-
-    ### Multi Turn 질문 만들기
-    multi_prompt = format_docs(st.session_state.conversation_history)
-    print(f">>> multi_prompt: {multi_prompt}")
-
+ 
 
     # Step 1: Perform search
     search_payload = {
-        "question": multi_prompt,
+        "question": refined_result["refined_query"],
         "top_k": {"doc": doc_top_k, "web": web_top_k},
         "rerank_k": rerank_k,
         "rerank_threshold": rerank_threshold,
@@ -130,7 +129,7 @@ if prompt := st.chat_input("Ask me anything"):
         
         # Prepare generation request
         gen_payload = {
-            "question": multi_prompt, #search_data["refined_question"],
+            "question": refined_result["refined_query"], #search_data["refined_question"],
             "questions": [msg["content"] for msg in st.session_state.conversation_history if msg["role"] == "user"],
             "documents": current_search_results,
             "session_id": st.session_state.session_id

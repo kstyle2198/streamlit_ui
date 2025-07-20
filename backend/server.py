@@ -74,12 +74,90 @@ def reranking(query: str, docs: list, min_score: float = 0.5, top_k: int = 3):
 
     return top_scores, reranked_docs
 
-# -----------------------------
-# Step 1: Define state and agent
-# -----------------------------
+
+### REFINE QUERY ######################
 from langgraph.graph.message import add_messages
 from langchain_core.messages import AnyMessage
 
+
+class RefineState(TypedDict):
+    """
+    """
+    question: str
+    chat_history: list
+    refined_query: str
+    
+
+def format_query(docs: list) -> str:
+    """Format documents for context"""
+    try:
+        return "\n\n".join(doc["content"].strip().replace("\n", "") for doc in docs)
+    except:
+        return ""
+
+
+from langchain_core.messages import HumanMessage
+def refined_question(state:RefineState):
+    question = state['question']
+    chat_history = state['chat_history']
+    format_chat_history = format_query(chat_history)
+
+    prompt = f"""아래 질문 내용이 chat_history와 관련이 있는 경우, chat_history를 참고하여 질문을 정제해 주세요.
+    chat_history의 내용이 없거나, 내용이 질문과 상관이 없는 경우, 질문 자체의 표현만 정제해주세요.
+    질문에 대해 답하지 말고, 표현만 정제해주세요.
+    <question>
+    {question}
+
+    <chat_history>
+    {format_chat_history}
+    """
+    refined_question_content = llm.invoke([HumanMessage(content=prompt)]).content
+    print(f">>>The Original Question is {question}")
+    print(f">>>The Refined Question is {refined_question_content}.")
+    return {"refined_query": refined_question_content}
+
+
+from langgraph.checkpoint.memory import MemorySaver
+
+def query_refiner(state):
+    refine_builder = StateGraph(state)
+    refine_builder.add_node("refine_agent", refined_question)
+
+    refine_builder.add_edge(START, "refine_agent")
+    refine_builder.add_edge("refine_agent", END) 
+    return refine_builder.compile()
+
+refine_graph = query_refiner(RefineState)
+
+
+app = FastAPI()
+
+class RefineRequest(BaseModel):
+    question: str
+    chat_history: list = []
+
+class RefineResponse(BaseModel):
+    refined_query: str
+
+@app.post("/refine", response_model=RefineResponse)
+async def refine_question(req: RefineRequest):
+    try:
+        # 초기 상태 구성
+        state = {
+            "question": req.question,
+            "chat_history": req.chat_history
+            }
+
+        # 그래프 실행
+        result = refine_graph.invoke(state)
+        return RefineResponse(refined_query=result["refined_query"])
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+### HYBRID SEARCH ######################
 class OverAllState(TypedDict):
     """
     Represents the overall state of our graph.
@@ -94,21 +172,7 @@ class OverAllState(TypedDict):
     rerank_threshold: float = 0.01
     generations: Annotated[list, operator.add] # 응답 결과 누적
 
-from langchain_core.messages import HumanMessage
-def refined_question(state:OverAllState):
-    original_question = state['question']
 
-    prompt = f"""Convert below original question into refined question in Korean for more efficient search and generation.
-    You must generate the refined question without any answer or redundant expression.
-    <original question>
-    {original_question}
-    """
-    refined_question_content = llm.invoke([HumanMessage(content=prompt)]).content
-    print(f">>>The Original Question is {original_question}")
-    print(f">>>The Refined Question is {refined_question_content}.")
-    
-    # 질문을 questions 리스트에 추가
-    return {"question": refined_question_content, "questions": [original_question]}
 
 def retrieve_agent(state: OverAllState):
     """
@@ -183,38 +247,24 @@ def reranking_agent(state:OverAllState):
     return {"rerank_context": [documents], "top_scores": [top_scores]}
 
 
-# -----------------------------
-# Step 2: Build LangGraph
-# -----------------------------
-
-from langgraph.checkpoint.memory import MemorySaver
-
 def search_builder(state):
     rag_builder = StateGraph(state)
-    rag_builder.add_node("refined_question", refined_question)
     rag_builder.add_node("websearch_agent", websearch_agent)
     rag_builder.add_node("retrieve_agent", retrieve_agent)
     rag_builder.add_node("reranking_agent", reranking_agent)
 
-    rag_builder.add_edge(START, "refined_question")
-    rag_builder.add_edge("refined_question", "websearch_agent")
+    rag_builder.add_edge(START, "websearch_agent")
     rag_builder.add_edge("websearch_agent", "reranking_agent")
-    rag_builder.add_edge("refined_question", "retrieve_agent") 
+    rag_builder.add_edge(START, "retrieve_agent") 
     rag_builder.add_edge("retrieve_agent", "reranking_agent")
     rag_builder.add_edge("reranking_agent", END) 
 
     memory = MemorySaver()
-    graph = rag_builder.compile(checkpointer=memory)
+    return rag_builder.compile(checkpointer=memory)
 
-    return graph
 
 search_graph = search_builder(OverAllState)
 
-# -----------------------------
-# Step 3: FastAPI Input/Output Models
-# -----------------------------
-
-app = FastAPI()
 
 # Define request models
 class QuestionRequest(BaseModel):
@@ -289,6 +339,7 @@ async def search_documents(request: QuestionRequest):
         )
 
 
+### GENERATE ########################
 from typing import TypedDict, Annotated, List, Dict, Optional
 from pydantic import BaseModel
 import re
