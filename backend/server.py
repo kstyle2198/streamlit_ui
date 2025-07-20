@@ -75,18 +75,49 @@ def reranking(query: str, docs: list, min_score: float = 0.5, top_k: int = 3):
     return top_scores, reranked_docs
 
 
+#### MCP SERVER #####################
+# from fastapi_mcp import add_mcp_server
+from fastapi_mcp import FastApiMCP
+from routers.web import web_search
+from routers.wiki import wiki_search
+from routers.arxiv import arxiv_search
+
+app = FastAPI()
+
+app.include_router(web_search)
+app.include_router(wiki_search)
+app.include_router(arxiv_search)
+
+#### MCP Adaptor #######
+# 라우터 안에 있는 API들을 묶는 방식
+# mcp_server = add_mcp_server(
+#     app,
+#     mount_path="/mcp",
+#     name="My API MCP",
+#     describe_all_responses=True,
+#     describe_full_response_schema=True
+#     )   # 라우터 안에 있는 API들을 묶는 방식
+
+mcp = FastApiMCP(
+    app,
+    name="내 API MCP",
+    describe_all_responses=True,  # 가능한 모든 응답 스키마 포함
+    describe_full_response_schema=True  # 전체 JSON 스키마 세부정보 포함
+)    
+
+# FastAPI 앱에 MCP 서버 마운트
+mcp.mount()
+
 ### REFINE QUERY ######################
 from langgraph.graph.message import add_messages
 from langchain_core.messages import AnyMessage
-
 
 class RefineState(TypedDict):
     """
     """
     question: str
     chat_history: list
-    refined_query: str
-    
+    refined_query: str  
 
 def format_query(docs: list) -> str:
     """Format documents for context"""
@@ -94,7 +125,6 @@ def format_query(docs: list) -> str:
         return "\n\n".join(doc["content"].strip().replace("\n", "") for doc in docs)
     except:
         return ""
-
 
 from langchain_core.messages import HumanMessage
 def refined_question(state:RefineState):
@@ -116,7 +146,6 @@ def refined_question(state:RefineState):
     print(f">>>The Refined Question is {refined_question_content}.")
     return {"refined_query": refined_question_content}
 
-
 from langgraph.checkpoint.memory import MemorySaver
 
 def query_refiner(state):
@@ -130,7 +159,7 @@ def query_refiner(state):
 refine_graph = query_refiner(RefineState)
 
 
-app = FastAPI()
+
 
 class RefineRequest(BaseModel):
     question: str
