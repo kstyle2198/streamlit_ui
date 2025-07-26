@@ -1,0 +1,93 @@
+{"asctime": "2025-07-26 10:01:29,128", "levelname": "INFO", "name": "web_search", "message": "Web search API called with query: \ud55c\uae00 \ucc3d\uc81c\uc77c"}
+{"asctime": "2025-07-26 10:01:29,128", "levelname": "INFO", "name": "web_search", "message": "Performing web search for question: \ud55c\uae00 \ucc3d\uc81c\uc77c"}
+{"asctime": "2025-07-26 10:01:31,768", "levelname": "INFO", "name": "web_search", "message": "Web search completed. Found 3 results."}
+{"asctime": "2025-07-26 10:01:53,546", "levelname": "INFO", "name": "wiki_search", "message": "Wiki search API called with query: \ud53c\ud0c0\uace0\ub77c\uc2a4 \uc815\ub9ac"}
+{"asctime": "2025-07-26 10:01:53,547", "levelname": "INFO", "name": "wiki_search", "message": "Performing wiki search for question: \ud53c\ud0c0\uace0\ub77c\uc2a4 \uc815\ub9ac"}
+{"asctime": "2025-07-26 10:01:58,205", "levelname": "INFO", "name": "wiki_search", "message": "Wiki search completed. Found 5 results."}
+{"asctime": "2025-07-26 10:02:33,247", "levelname": "INFO", "name": "torch._subclasses.fake_tensor", "message": "FakeTensor cache stats:"}
+{"asctime": "2025-07-26 10:02:33,248", "levelname": "INFO", "name": "torch._subclasses.fake_tensor", "message": "  cache_hits: 0"}
+{"asctime": "2025-07-26 10:02:33,248", "levelname": "INFO", "name": "torch._subclasses.fake_tensor", "message": "  cache_misses: 0"}
+{"asctime": "2025-07-26 10:03:01,111", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:03:09,800", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.014s]"}
+{"asctime": "2025-07-26 10:04:18,598", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:04:26,876", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.035s]"}
+{"asctime": "2025-07-26 10:05:04,595", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:05:12,388", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.013s]"}
+{"asctime": "2025-07-26 10:06:23,977", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:06:31,879", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.032s]"}
+{"asctime": "2025-07-26 10:07:33,630", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:07:49,933", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:07:58,390", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.032s]"}
+{"asctime": "2025-07-26 10:09:25,708", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:09:32,919", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:09:34,002", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.027s]"}
+{"asctime": "2025-07-26 10:10:34,753", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:10:42,045", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:10:43,136", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.012s]"}
+{"asctime": "2025-07-26 10:11:09,106", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:11:16,052", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:11:17,241", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.017s]"}
+{"asctime": "2025-07-26 10:13:00,061", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:13:06,877", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:13:07,890", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.024s]"}
+{"asctime": "2025-07-26 10:15:42,059", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:15:48,915", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:15:50,122", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.018s]"}
+{"asctime": "2025-07-26 10:16:12,074", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:16:19,331", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:16:20,468", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.015s]"}
+{"asctime": "2025-07-26 10:17:45,733", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:17:52,798", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:17:53,749", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.013s]"}
+{"asctime": "2025-07-26 10:19:06,538", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:19:13,307", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:19:14,278", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.012s]"}
+{"asctime": "2025-07-26 10:21:34,704", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:21:41,429", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:21:42,426", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.017s]"}
+{"asctime": "2025-07-26 10:23:09,427", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:23:18,149", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:23:19,709", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.021s]"}
+{"asctime": "2025-07-26 10:24:41,467", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:24:48,556", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:24:49,707", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.013s]"}
+{"asctime": "2025-07-26 10:24:51,935", "levelname": "INFO", "name": "refine", "message": "Refine the query: \uc911\ub300\uc7ac\ud574 \ucc98\ubc8c"}
+{"asctime": "2025-07-26 10:24:52,182", "levelname": "ERROR", "name": "refine", "message": "Query Refinery failed", "exc_info": "Traceback (most recent call last):\n  File \"D:\\Streamlit_UI\\backend\\routers\\refine.py\", line 86, in refine_question\n    result = refine_graph.invoke(state)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Streamlit_UI\\.venv\\Lib\\site-packages\\langgraph\\pregel\\__init__.py\", line 2894, in invoke\n    for chunk in self.stream(\n                 ^^^^^^^^^^^^\n  File \"D:\\Streamlit_UI\\.venv\\Lib\\site-packages\\langgraph\\pregel\\__init__.py\", line 2527, in stream\n    for _ in runner.tick(\n             ^^^^^^^^^^^^\n  File \"D:\\Streamlit_UI\\.venv\\Lib\\site-packages\\langgraph\\pregel\\runner.py\", line 157, in tick\n    run_with_retry(\n  File \"D:\\Streamlit_UI\\.venv\\Lib\\site-packages\\langgraph\\pregel\\retry.py\", line 40, in run_with_retry\n    return task.proc.invoke(task.input, config)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Streamlit_UI\\.venv\\Lib\\site-packages\\langgraph\\utils\\runnable.py\", line 623, in invoke\n    input = context.run(step.invoke, input, config, **kwargs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Streamlit_UI\\.venv\\Lib\\site-packages\\langgraph\\utils\\runnable.py\", line 377, in invoke\n    ret = self.func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Streamlit_UI\\backend\\routers\\refine.py\", line 31, in refined_question\n    logger.info(f\"Refining the question: {question}\")\n                                          ^^^^^^^^\nUnboundLocalError: cannot access local variable 'question' where it is not associated with a value\nDuring task with name 'refine_agent' and id '8301c8f4-962f-0c50-7871-5264e65981b6'"}
+{"asctime": "2025-07-26 10:26:56,939", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:27:03,889", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:27:04,954", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.037s]"}
+{"asctime": "2025-07-26 10:27:07,207", "levelname": "INFO", "name": "refine", "message": "Refine the query: \uc911\ub300\uc7ac\ud574 \ucc98\ubc8c"}
+{"asctime": "2025-07-26 10:27:07,432", "levelname": "INFO", "name": "refine", "message": "Refining the question: \uc911\ub300\uc7ac\ud574 \ucc98\ubc8c"}
+{"asctime": "2025-07-26 10:27:08,067", "levelname": "INFO", "name": "httpx", "message": "HTTP Request: POST https://api.groq.com/openai/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"asctime": "2025-07-26 10:28:49,751", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:29:09,047", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:29:15,855", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:29:16,985", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.016s]"}
+{"asctime": "2025-07-26 10:29:34,017", "levelname": "INFO", "name": "refine", "message": "Refine the query: \uc911\ub300\uc7ac\ud574 \uc694\uac74"}
+{"asctime": "2025-07-26 10:29:34,267", "levelname": "INFO", "name": "refine", "message": "Refining the question: \uc911\ub300\uc7ac\ud574 \uc694\uac74"}
+{"asctime": "2025-07-26 10:29:34,807", "levelname": "INFO", "name": "httpx", "message": "HTTP Request: POST https://api.groq.com/openai/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"asctime": "2025-07-26 10:29:34,822", "levelname": "INFO", "name": "refine", "message": "Refining Query completed. Generate 3 words."}
+{"asctime": "2025-07-26 10:31:11,805", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:31:18,755", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:31:19,848", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.023s]"}
+{"asctime": "2025-07-26 10:31:21,963", "levelname": "INFO", "name": "hybrid_search", "message": "Hybrid search API called"}
+{"asctime": "2025-07-26 10:31:22,172", "levelname": "INFO", "name": "hybrid_search", "message": "Start Retrieve Agent"}
+{"asctime": "2025-07-26 10:31:22,174", "levelname": "INFO", "name": "hybrid_search", "message": "Start WebSearch Agent"}
+{"asctime": "2025-07-26 10:31:26,143", "levelname": "INFO", "name": "httpx", "message": "HTTP Request: POST http://localhost:11434/api/embed \"HTTP/1.1 200 OK\""}
+{"asctime": "2025-07-26 10:31:26,269", "levelname": "INFO", "name": "elastic_transport.transport", "message": "POST http://localhost:9200/ship_safety/_search?_source_includes=vector,metadata,text [status:200 duration:0.124s]"}
+{"asctime": "2025-07-26 10:31:26,277", "levelname": "INFO", "name": "hybrid_search", "message": "Retrieving Docs completed. Found 3 results."}
+{"asctime": "2025-07-26 10:31:28,436", "levelname": "INFO", "name": "hybrid_search", "message": "Web search completed. Found 2 results."}
+{"asctime": "2025-07-26 10:31:28,440", "levelname": "INFO", "name": "hybrid_search", "message": "Start Reranking Agent"}
+{"asctime": "2025-07-26 10:31:28,441", "levelname": "INFO", "name": "hybrid_search", "message": "Start ReRanking"}
+{"asctime": "2025-07-26 10:31:45,684", "levelname": "INFO", "name": "hybrid_search", "message": "ReRanking completed. Found 3 results."}
+{"asctime": "2025-07-26 10:31:45,685", "levelname": "INFO", "name": "hybrid_search", "message": "Reranking Agent completed. Rerank 3 results."}
+{"asctime": "2025-07-26 10:32:09,983", "levelname": "INFO", "name": "generate", "message": "Generation API called for the query: hi"}
+{"asctime": "2025-07-26 10:32:09,998", "levelname": "INFO", "name": "generate", "message": "Start Generate Agent"}
+{"asctime": "2025-07-26 10:32:10,547", "levelname": "INFO", "name": "httpx", "message": "HTTP Request: POST https://api.groq.com/openai/v1/chat/completions \"HTTP/1.1 200 OK\""}
+{"asctime": "2025-07-26 10:32:10,839", "levelname": "INFO", "name": "generate", "message": "Generation completed. Generate 461 words."}
+{"asctime": "2025-07-26 10:32:59,504", "levelname": "INFO", "name": "torch._subclasses.fake_tensor", "message": "FakeTensor cache stats:"}
+{"asctime": "2025-07-26 10:32:59,505", "levelname": "INFO", "name": "torch._subclasses.fake_tensor", "message": "  cache_hits: 0"}
+{"asctime": "2025-07-26 10:32:59,506", "levelname": "INFO", "name": "torch._subclasses.fake_tensor", "message": "  cache_misses: 0"}
+{"asctime": "2025-07-26 10:33:17,537", "levelname": "INFO", "name": "datasets", "message": "PyTorch version 2.7.1 available."}
+{"asctime": "2025-07-26 10:33:24,536", "levelname": "INFO", "name": "hybrid_search", "message": "Load Elastic VectorStore"}
+{"asctime": "2025-07-26 10:33:25,656", "levelname": "INFO", "name": "elastic_transport.transport", "message": "GET http://localhost:9200/ [status:200 duration:0.020s]"}

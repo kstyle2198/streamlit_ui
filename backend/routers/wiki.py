@@ -1,3 +1,4 @@
+import logging
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from typing import List
@@ -8,6 +9,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
 
+# 로거 설정
+logger = logging.getLogger("wiki_search")
 
 def parse_paper_info(text: str) -> dict:
     lines = text.strip().split('\n')
@@ -32,7 +35,7 @@ def parse_paper_info(text: str) -> dict:
 
 
 def do_wiki_search(question:str):
-
+    logger.info(f"Performing wiki search for question: {question}")
     wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper(top_k_results=3, lang="ko"))
     wiki_results = wikipedia.run(question)
     wiki_results = wiki_results.split("\n\n")
@@ -41,6 +44,7 @@ def do_wiki_search(question:str):
     for d in wiki_results:
         refined_d = parse_paper_info(d)
         refined_results.append(refined_d)
+    logger.info(f"Wiki search completed. Found {len(refined_results)} results.")
     return refined_results
 
 
@@ -54,10 +58,12 @@ wiki_search = APIRouter(prefix="/wiki_search")
 
 @wiki_search.post("/", tags=["Search"])
 def do_search(request: SearchRequest):
+    logger.info(f"Wiki search API called with query: {request.query}")
     try:
         results = do_wiki_search(request.query)
         return {"results": results}
     except Exception as e:
+        logger.error("Wiki search failed", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
